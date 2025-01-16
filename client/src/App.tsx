@@ -1,43 +1,37 @@
 import { useState, useEffect, useCallback } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Row, Col } from "react-simple-flex-grid";
+import { MemoryRouter as Router, Routes, Route } from "react-router-dom";
 import { GameContext } from "./context/game-context";
-import Ludo from "./components/Ludo";
-import Dice from "./components/Dice";
-import Menu from "./components/Menu";
-import Header from "./components/Header";
-import ColorSettings from "./components/ColorSettings";
-import Alert from "./components/Alert";
-import Footer from "./components/Footer";
 import { chance } from "./hooks/utils";
-import "react-simple-flex-grid/lib/main.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { OptionsProps } from "./types";
 import "./App.css";
-import Control from "./components/Control";
 import { StarknetProvider } from "./starknet-provider";
-import { FiAlertTriangle, FiZap } from "react-icons/fi";
 import { BoardContext, BoardType } from "./context/board-context";
 import { DiceProvider } from "./context/dice-context";
 import { ColorProvider } from "./context/color-context";
-import ControlWindowLayout from "./components/ControlWindows/ControlWindowLayout";
-import GameHelp from "./components/ControlWindows/GameHelp";
-import Toolbox from "./components/ControlWindows/Toolbox";
-import Multiplayer from "./components/ControlWindows/Multiplayer";
-import Leaderboard from "./components/ControlWindows/Leaderboard";
-import GameAccount from "./components/ControlWindows/GameAccount";
 import MobileResponsiveWarning from "./components/MobileResponsiveWarning";
 import { SchemaType } from "./dojo/typescript/models.gen";
 import { createDojoStore, SDK } from "@dojoengine/sdk";
-import Settings from "./components/Settings";
-import ToolboxPage from "./components/Toolbox";
-import { AvatarProvider } from "./context/avatar-context";
+import toastBtn from "./assets/images/button-icon/close-btn-toast.svg"
+import GameLayout from "./components/GameLayout";
+import HomeScreen from "./components/HomeScreen";
+import StartGameScreen from "./components/StartGameScreen";
+import AccountScreen from "./components/AccountScreen";
+import LeaderboardScreen from "./components/LeaderboardScreen";
+import ToolboxScreen from "./components/ToolboxScreen";
+import HelpScreen from "./components/HelpScreen";
+import SettingsScreen from "./components/SettingsScreen";
+import { ModalProvider } from "./context/modal-context";
+import TheGameScreen from "./components/TheGameScreen";
+import { Modal } from "./components/Modal";
 
 const App = ({ sdk }: { sdk: SDK<SchemaType> }) => {
+// const App = () => {
   const [activeWindow, setActiveWindow] = useState("");
   const [showMobileResponsiveWarning, setShowMobileResponsiveWarning] =
     useState(false);
+  const [isGameAssetsSet, setGameAssets] = useState({ status: false, bgURL: "" });
   const [board, setBoard] = useState<BoardType>("classic");
   const [gameState, setGameState] = useState({});
   const [activeCategory, setActiveCategory] = useState("BOARD");
@@ -84,8 +78,7 @@ const App = ({ sdk }: { sdk: SDK<SchemaType> }) => {
     if (options.gameIsOngoing) {
       if (options.winners.length === options.playersLength - 1) {
         toast(
-          `The game has ended. Player ${
-            chance[options.winners[0]]
+          `The game has ended. Player ${chance[options.winners[0]]
           } is the winner`
         );
         setGameOptions({
@@ -107,13 +100,14 @@ const App = ({ sdk }: { sdk: SDK<SchemaType> }) => {
     };
   }, [options, setGameOptions]);
 
+
   return (
-    <>
-      <Router>
-        {showMobileResponsiveWarning ? (
-          <MobileResponsiveWarning />
-        ) : (
-          <>
+    <Router>
+      {showMobileResponsiveWarning ? (
+        <MobileResponsiveWarning />
+      ) : (
+        <>
+          <ModalProvider>
             <StarknetProvider>
               <GameContext.Provider
                 value={{
@@ -126,135 +120,50 @@ const App = ({ sdk }: { sdk: SDK<SchemaType> }) => {
                 <BoardContext.Provider value={{ board, toggleBoard }}>
                   <ColorProvider>
                     <DiceProvider>
-                      <AvatarProvider>
+                      <GameLayout>
                         <Routes>
                           <Route
-                            path="/color-settings"
-                            element={<ColorSettings />}
-                          />
-                          <Route path="/settings" element={<Settings />} />
-                          <Route path="/toolbox" element={<ToolboxPage />} />
-                          <Route
                             path="/"
-                            element={
-                              <>
-                                <div className="game-behaviour-warning">
-                                  <FiAlertTriangle size={20} />
-                                  StarkLudo is still in active development{" "}
-                                  <FiZap color="yellow" size={20} />
-                                </div>
-                                <div className="layout-container">
-                                  <div className="layout-stretch-lock">
-                                    <div className="mobile-header">
-                                      <Header />
-                                    </div>
-                                    <Row gutter={0}>
-                                      <Col xs={12} sm={12} md={7} lg={7}>
-                                        <Ludo />
-                                      </Col>
-                                      <Col xs={12} sm={12} md={5} lg={5}>
-                                        <div className="sidebar">
-                                          <div>
-                                            <div>
-                                              <div className="desktop-header">
-                                                <Header />
-                                              </div>
-                                              <Menu />
-                                              {/* <RestartGame /> */}
-                                              <Alert />
-                                              <Dice />
-                                              {activeWindow === "account" ? (
-                                                <ControlWindowLayout
-                                                  toggle={() =>
-                                                    setActiveWindow("")
-                                                  }
-                                                  title="PROFILE"
-                                                  subtitle="Your Profile Information"
-                                                >
-                                                  <GameAccount sdk={sdk} />
-                                                </ControlWindowLayout>
-                                              ) : null}
-
-                                              {activeWindow ===
-                                              "leaderboard" ? (
-                                                <ControlWindowLayout
-                                                  toggle={() =>
-                                                    setActiveWindow("")
-                                                  }
-                                                  title="LEADERBOARD"
-                                                  subtitle="Global Player Rankings"
-                                                >
-                                                  <Leaderboard />
-                                                </ControlWindowLayout>
-                                              ) : null}
-
-                                              {activeWindow ===
-                                              "multiplayer" ? (
-                                                <ControlWindowLayout
-                                                  toggle={() =>
-                                                    setActiveWindow("")
-                                                  }
-                                                  title="MULTIPLAYER"
-                                                  subtitle="Choose An Account To Play With"
-                                                >
-                                                  <Multiplayer />
-                                                </ControlWindowLayout>
-                                              ) : null}
-
-                                              {activeWindow === "toolbox" ? (
-                                                <ControlWindowLayout
-                                                  toggle={() =>
-                                                    setActiveWindow("")
-                                                  }
-                                                  title="TOOLBOX"
-                                                  subtitle="Get All Your Items And Settings Done"
-                                                >
-                                                  <Toolbox
-                                                    activeCategory={
-                                                      activeCategory
-                                                    }
-                                                    onCategoryClick={
-                                                      handleCategoryClick
-                                                    }
-                                                  />
-                                                </ControlWindowLayout>
-                                              ) : null}
-
-                                              {activeWindow === "help" && (
-                                                <GameHelp
-                                                  onClose={() =>
-                                                    setActiveWindow("")
-                                                  }
-                                                />
-                                              )}
-                                              <Control
-                                                toggleActiveWindow={
-                                                  toggleActiveWindow
-                                                }
-                                              />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </Col>
-                                    </Row>
-                                  </div>
-                                </div>
-                                <Footer />
-                              </>
-                            }
+                            element={<HomeScreen />}
+                          />
+                          <Route
+                            path="/thestart"
+                            element={<TheGameScreen />}
+                          />
+                          <Route
+                            path="/account"
+                            element={<AccountScreen />}
+                          />
+                          <Route
+                            path="/help"
+                            element={<HelpScreen />}
+                          />
+                          <Route
+                            path="/toolbox"
+                            element={<ToolboxScreen />}
+                          />
+                          <Route
+                            path="/leaderboard"
+                            element={<LeaderboardScreen />}
+                          />
+                          <Route path="/settings" element={<SettingsScreen />} />
+                          <Route
+                            path="/start"
+                            element={<StartGameScreen />}
                           />
                         </Routes>
-                      </AvatarProvider>
+                      </GameLayout>
                     </DiceProvider>
                   </ColorProvider>
                 </BoardContext.Provider>
               </GameContext.Provider>
-              <ToastContainer position="bottom-center" />
+              <ToastContainer position="bottom-right" closeButton={<img src={toastBtn} className="w-4 h-4" alt="close-btn" />} />
             </StarknetProvider>
-          </>
-        )}
-      </Router>
-    </>
+            <Modal />
+          </ModalProvider>
+        </>
+      )}
+    </Router>
   );
 };
 
