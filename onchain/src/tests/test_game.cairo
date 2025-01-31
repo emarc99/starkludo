@@ -410,7 +410,9 @@ mod tests {
     #[test]
     fn test_pos_to_board() {
         let positions = array![0, 13, 26, 52, 39, 27, 52, 53, 54, 8, 28, 38, 55];
-        let expected_board_positions = array![0, 13, 26, 1001, 52, 40, 2001, 2002, 3003, 34, 2, 12, 4004];
+        let expected_board_positions = array![
+            0, 13, 26, 1001, 52, 40, 2001, 2002, 3003, 34, 2, 12, 4004,
+        ];
         let board_positions = pos_to_board(positions);
         assert(board_positions == expected_board_positions, 'Pos to board failed');
     }
@@ -468,8 +470,8 @@ mod tests {
 
     #[test]
     fn test_move_initial_position_with_six() {
-
-        // This test case verifies that a piece can move from its initial position when the dice roll is 6.
+        // This test case verifies that a piece can move from its initial position when the dice
+        // roll is 6.
 
         let (mut world, game_action_system) = setup_world();
 
@@ -480,7 +482,8 @@ mod tests {
         game_action_system.create_new_player(username, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
@@ -503,8 +506,8 @@ mod tests {
 
     #[test]
     fn test_move_initial_position_without_six() {
-
-        // This test case verifies that a piece cannot move from its initial position if the dice roll is not 6.
+        // This test case verifies that a piece cannot move from its initial position if the dice
+        // roll is not 6.
 
         let (mut world, game_action_system) = setup_world();
 
@@ -515,7 +518,8 @@ mod tests {
         game_action_system.create_new_player(username, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
@@ -537,8 +541,8 @@ mod tests {
 
     #[test]
     fn test_move_normal_position() {
-
-        // This test case verifies that a piece can move from a normal position based on the dice roll.
+        // This test case verifies that a piece can move from a normal position based on the dice
+        // roll.
 
         let (mut world, game_action_system) = setup_world();
         let caller = contract_address_const::<'test_alice'>();
@@ -548,20 +552,21 @@ mod tests {
         game_action_system.create_new_player(username, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('r1', 0);  // move from its initial position to 1.
+        game_action_system.move('r1', 0); // move from its initial position to 1.
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 5;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('r1', 0);  // move from 1 to 6.
+        game_action_system.move('r1', 0); // move from 1 to 6.
 
         // Verify the new position
         let game: Game = world.read_model(game_id);
@@ -574,7 +579,6 @@ mod tests {
 
     #[test]
     fn test_move_to_safe_position() {
-
         // This test case verifies that a piece can move to a safe position on the board.
 
         let (mut world, game_action_system) = setup_world();
@@ -585,26 +589,27 @@ mod tests {
         game_action_system.create_new_player(username, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Green, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Green, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g1', 1);  // move from its initial position to 14.
+        game_action_system.move('g1', 1); // move from its initial position to 14.
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 5;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g1', 1);  // move from 14 to 19.
+        game_action_system.move('g1', 1); // move from 14 to 19.
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 3;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g1', 1);  // move from 19 to 22.
+        game_action_system.move('g1', 1); // move from 19 to 22.
 
         // Verify the new position
         let game: Game = world.read_model(game_id);
@@ -616,7 +621,6 @@ mod tests {
 
     #[test]
     fn test_move_to_occupied_position() {
-
         //  This test case verifies that a piece can move to an occupied position on the board.
 
         let (mut world, game_action_system) = setup_world();
@@ -627,32 +631,33 @@ mod tests {
         game_action_system.create_new_player(username, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Green, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Green, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g1', 1);  // move g1 from its initial position to 14.
+        game_action_system.move('g1', 1); // move g1 from its initial position to 14.
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g2', 1);  // move g2 from its initial position to 14.
+        game_action_system.move('g2', 1); // move g2 from its initial position to 14.
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 5;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g1', 1);  // move from 14 to 19.
+        game_action_system.move('g1', 1); // move from 14 to 19.
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 5;
         testing::set_contract_address(game_action_system.contract_address);
         world.write_model(@game);
-        game_action_system.move('g2', 1);  // move from 14 to 19.
+        game_action_system.move('g2', 1); // move from 14 to 19.
 
         // Verify the new position
         let game: Game = world.read_model(game_id);
@@ -664,7 +669,6 @@ mod tests {
 
     #[test]
     fn test_capture_opponent_piece() {
-
         // This test case verifies the capturing mechanism in the game
 
         let (mut world, game_action_system) = setup_world();
@@ -676,7 +680,8 @@ mod tests {
         game_action_system.create_new_player(username_red, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
@@ -712,8 +717,7 @@ mod tests {
 
     #[test]
     fn test_capture_opponent_piece_in_safe_zone() {
-
-         // This test case verifies that a player cannot capture an opponent's piece in the safe zone
+        // This test case verifies that a player cannot capture an opponent's piece in the safe zone
 
         let (mut world, game_action_system) = setup_world();
 
@@ -724,7 +728,8 @@ mod tests {
         game_action_system.create_new_player(username_red, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
         game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
@@ -759,7 +764,6 @@ mod tests {
 
     #[test]
     fn test_red_player_wins() {
-
         // This test case verifies the winning condition in the game.
 
         let (mut world, game_action_system) = setup_world();
@@ -771,7 +775,8 @@ mod tests {
         game_action_system.create_new_player(username_red, false);
 
         // Setup initial game state
-        let game_id = game_action_system.create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
+        let game_id = game_action_system
+            .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
         game_action_system.start_game(game_id);
 
         // Move red piece to position 56 (one step away from winning)
