@@ -1,1 +1,6 @@
 target
+deploy.sh
+.env.sepolia
+.env.mainnet
+deploy-sepolia.sh
+deploy-mainnet.sh
