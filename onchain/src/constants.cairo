@@ -46,18 +46,55 @@ pub enum TileNode {
 
 fn get_safe_positions() -> Array<u32> {
     array![
-        1, 9, 14, 22, 27, 35, 40, 48, 1001, 1002, 1003, 1004, 1005,
-        2001, 2002, 2003, 2004, 2005, 3001, 3002, 3003, 3004, 3005,
-        4001, 4002, 4003, 4004, 4005
+        1,
+        9,
+        14,
+        22,
+        27,
+        35,
+        40,
+        48,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        2001,
+        2002,
+        2003,
+        2004,
+        2005,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        4001,
+        4002,
+        4003,
+        4004,
+        4005,
     ]
 }
 
 fn get_markers() -> Array<felt252> {
     array![
-        'r0', 'r1', 'r2', 'r3',
-        'g0', 'g1', 'g2', 'g3',
-        'y0', 'y1', 'y2', 'y3',
-        'b0', 'b1', 'b2', 'b3'
+        'r0',
+        'r1',
+        'r2',
+        'r3',
+        'g0',
+        'g1',
+        'g2',
+        'g3',
+        'y0',
+        'y1',
+        'y2',
+        'y3',
+        'b0',
+        'b1',
+        'b2',
+        'b3',
     ]
 }
 
@@ -93,7 +130,6 @@ fn board_to_pos(arr: Array<u32>) -> Array<u32> {
             51 + (val % 1000)
         } else if val == 0 {
             0
-
         } else {
             let diff = if val >= *get_start_points().at(color) {
                 val - *get_start_points().at(color)
@@ -153,14 +189,13 @@ fn zero_address() -> ContractAddress {
 
 fn contains(array: Array<u32>, value: u32) -> bool {
     let mut found = false;
-        for item in array {
-            if item == value {
-                found = true;
-                break;
-            }
-        };
+    for item in array {
+        if item == value {
+            found = true;
+            break;
+        }
+    };
     return found;
-
 }
 
 fn get_cap_colors() -> Array<felt252> {
@@ -184,7 +219,7 @@ fn pos_reducer(data: Array<u32>, players_length: u32) -> Array<felt252> {
                 // Format: color + "0" + (i % 4 + 1)
                 color * 100 + (i % 4 + 1).into()
             } else if d > 1000 {
-                 // Format: color + (d % 1000)
+                // Format: color + (d % 1000)
                 color * 1000 + (d % 1000).into()
             } else {
                 d.into()

@@ -1,17 +1,17 @@
 use starkludo::models::{
     game::{Game, GameCounter, GameTrait, GameMode, GameStatus, PlayerColor},
-    player::{Player, PlayerTrait, AddressToUsername, UsernameToAddress}
+    player::{Player, PlayerTrait, AddressToUsername, UsernameToAddress},
 };
 use starknet::{ContractAddress, get_block_timestamp};
 
 #[starknet::interface]
 trait IGameActions<T> {
     fn create_new_game(
-        ref self: T, game_mode: GameMode, player_color: PlayerColor, number_of_players: u8
+        ref self: T, game_mode: GameMode, player_color: PlayerColor, number_of_players: u8,
     ) -> u64;
     fn start_game(ref self: T, game_id: u64);
     fn join(ref self: T, username: felt252, selected_color: felt252, game_id: u64);
-    fn move(ref self: T,  pos: felt252, color: u8);
+    fn move(ref self: T, pos: felt252, color: u8, game_id: u64);
     fn roll(ref self: T) -> (u8, u8);
 
     fn get_current_game_id(self: @T) -> u64;
@@ -28,25 +28,28 @@ trait IGameActions<T> {
 pub mod GameActions {
     use core::array::ArrayTrait;
     use starknet::{
-        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const
+        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const,
     };
     use super::{
         IGameActions, Game, GameCounter, GameTrait, GameMode, GameStatus, Player, PlayerColor,
-        PlayerTrait, AddressToUsername, UsernameToAddress
+        PlayerTrait, AddressToUsername, UsernameToAddress,
     };
 
     use dojo::model::{ModelStorage, ModelValueStorage};
     use dojo::event::EventStorage;
     use origami_random::dice::{Dice, DiceTrait};
     use starkludo::errors::Errors;
-    use starkludo::constants::{get_markers, find_index, pos_to_board, board_to_pos, get_safe_positions, contains, pos_reducer, get_cap_colors};
+    use starkludo::constants::{
+        get_markers, find_index, pos_to_board, board_to_pos, get_safe_positions, contains,
+        pos_reducer, get_cap_colors,
+    };
 
     #[derive(Copy, Drop, Serde)]
     #[dojo::event]
     pub struct GameCreated {
         #[key]
         pub game_id: u64,
-        pub timestamp: u64
+        pub timestamp: u64,
     }
 
     #[derive(Copy, Drop, Serde)]
@@ -54,7 +57,7 @@ pub mod GameActions {
     pub struct PlayerCreated {
         #[key]
         pub username: felt252,
-        pub owner: ContractAddress
+        pub owner: ContractAddress,
     }
 
     #[derive(Copy, Drop, Serde)]
@@ -62,7 +65,7 @@ pub mod GameActions {
     pub struct GameStarted {
         #[key]
         pub game_id: u64,
-        pub time_stamp: u64
+        pub time_stamp: u64,
     }
 
     #[abi(embed_v0)]
@@ -71,13 +74,13 @@ pub mod GameActions {
             ref self: ContractState,
             game_mode: GameMode,
             player_color: PlayerColor,
-            number_of_players: u8
+            number_of_players: u8,
         ) -> u64 {
             // Get default world
             let mut world = self.world_default();
 
             assert(
-                number_of_players >= 2 && number_of_players <= 4, 'PLAYERS CAN ONLY BE 2, 3, OR 4'
+                number_of_players >= 2 && number_of_players <= 4, 'PLAYERS CAN ONLY BE 2, 3, OR 4',
             );
 
             // Get the account address of the caller
@@ -117,7 +120,7 @@ pub mod GameActions {
                 player_blue,
                 player_yellow,
                 player_green,
-                number_of_players
+                number_of_players,
             );
 
             world.write_model(@new_game);
@@ -136,9 +139,16 @@ pub mod GameActions {
 
             assert(game.is_initialised, 'GAME NOT INITIALISED');
 
+            // Assert that only game creator can start game
+            let caller_address = get_caller_address();
+            let game_creator_username = self.get_username_from_address(caller_address);
+            assert(game.created_by == game_creator_username, 'ONLY GAME CREATOR CAN CALL');
+
+            // Check if all the players have joined the game
+
             let game_mode: GameMode = game.mode;
 
-            // Create bot players (if they have not been created)
+            // Create bot players (if they have notbeen created)
             let green_bot: Player = self.create_bot_player(PlayerColor::Green);
             let yellow_bot: Player = self.create_bot_player(PlayerColor::Yellow);
             let blue_bot: Player = self.create_bot_player(PlayerColor::Blue);
@@ -193,7 +203,7 @@ pub mod GameActions {
                         }
                     }
                 },
-                GameMode::MultiPlayer => {}
+                GameMode::MultiPlayer => {},
             };
         }
 
@@ -203,36 +213,32 @@ pub mod GameActions {
 
             //get the game state
             let mut game: Game = world.read_model(game_id);
-            //
 
             game.player_red = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0
+                _ => 0,
             };
             game.player_yellow = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0
+                _ => 0,
             };
             game.player_blue = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0
+                _ => 0,
             };
             game.player_green = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0
+                _ => 0,
             };
         }
 
-        fn move(ref self: ContractState, pos: felt252, color: u8) {
+        fn move(ref self: ContractState, pos: felt252, color: u8, game_id: u64) {
             // Get world state
             let mut world = self.world_default();
-
-            // Get the current game ID
-            let game_id = self.get_current_game_id();
 
             // Retrieve the game state
             let mut game: Game = world.read_model(game_id);
@@ -374,7 +380,7 @@ pub mod GameActions {
                     game.b2 = *output.get(14).unwrap().unbox();
                     game.b3 = *output.get(15).unwrap().unbox();
                 },
-                _ => {}
+                _ => {},
             }
 
             // Get the current player's pieces
@@ -438,7 +444,9 @@ pub mod GameActions {
             let winner_3 = game.winner_3;
 
             // Check if the next player is already a winner
-            while next_player_address == winner_1 || next_player_address == winner_2 || next_player_address == winner_3 {
+            while next_player_address == winner_1
+                || next_player_address == winner_2
+                || next_player_address == winner_3 {
                 new_chance = (new_chance + 1) % players_length.try_into().unwrap();
                 next_player_address = match new_chance {
                     0 => red_address,
@@ -559,10 +567,10 @@ pub mod GameActions {
 
             let new_player: Player = PlayerTrait::new(username, caller, is_bot);
             let username_to_address: UsernameToAddress = UsernameToAddress {
-                username, address: caller
+                username, address: caller,
             };
             let address_to_username: AddressToUsername = AddressToUsername {
-                address: caller, username
+                address: caller, username,
             };
 
             world.write_model(@new_player);
@@ -596,7 +604,7 @@ pub mod GameActions {
                 PlayerColor::Red => {
                     username = 'red_bot';
                     player_address = contract_address_const::<'red_bot'>();
-                }
+                },
             };
 
             let existing_player: Player = world.read_model(username);
@@ -607,10 +615,10 @@ pub mod GameActions {
 
                 let new_player: Player = PlayerTrait::new(username, player_address, is_bot);
                 let username_to_address: UsernameToAddress = UsernameToAddress {
-                    username, address: player_address
+                    username, address: player_address,
                 };
                 let address_to_username: AddressToUsername = AddressToUsername {
-                    address: player_address, username
+                    address: player_address, username,
                 };
 
                 world.write_model(@new_player);
