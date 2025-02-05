@@ -11,14 +11,13 @@ trait IGameActions<T> {
     ) -> u64;
     fn start_game(ref self: T, game_id: u64);
     fn join(ref self: T, username: felt252, selected_color: felt252, game_id: u64);
-    fn move(ref self: T, pos: felt252, color: u8, game_id: u64);
+    fn move(ref self: T,  pos: felt252, color: u8);
     fn roll(ref self: T) -> (u8, u8);
 
     fn get_current_game_id(self: @T) -> u64;
     fn create_new_game_id(ref self: T) -> u64;
 
     fn create_new_player(ref self: T, username: felt252, is_bot: bool);
-    fn create_bot_player(ref self: T, bot_color: PlayerColor) -> Player;
     fn get_username_from_address(self: @T, address: ContractAddress) -> felt252;
     fn get_address_from_username(self: @T, username: felt252) -> ContractAddress;
     fn move_deducer(ref self: T, val: u32, dice_throw: u32) -> (u32, bool, bool);
@@ -130,11 +129,13 @@ pub mod GameActions {
             game_id
         }
 
-        fn start_game(ref self: ContractState, game_id: u64) {
-            // Get game world
+        /// Start game
+        /// Change game status to ONGOING
+        fn join(ref self: ContractState, player_color: PlayerColor, game_id: u64) {
+            // Get world state
             let mut world = self.world_default();
 
-            // Get game from world
+            //get the game state
             let mut game: Game = world.read_model(game_id);
 
             assert(game.is_initialised, 'GAME NOT INITIALISED');
@@ -146,93 +147,118 @@ pub mod GameActions {
 
             // Check if all the players have joined the game
 
-            let game_mode: GameMode = game.mode;
+            // Assert that game is a Multiplayer game
+            assert(game.mode == GameMode::MultiPlayer, 'GAME NOT MULTIPLAYER');
 
-            // Create bot players (if they have notbeen created)
+            // Assert that game is in Pending state
+            assert(game.status == GameStatus::Pending, 'GAME NOT PENDING');
+
+            // Get the account address of the caller
+            let caller_address = get_caller_address();
+            let caller_username = self.get_username_from_address(caller_address);
+
+            assert(caller_username != 0, 'PLAYER NOT REGISTERED');
+
+            /// Game starts automatically once the last player joins
+
+            // Verify that color is available
+            // Assign color to player if available
+            match player_color {
+                PlayerColor::Red => {
+                    if (game.player_red == 0) {
+                        game.player_red = caller_username
+                    } else {
+                        panic!("RED already selected");
+                    }
+                },
+                PlayerColor::Blue => {
+                    if (game.player_blue == 0) {
+                        game.player_blue = caller_username
+                    } else {
+                        panic!("BLUE already selected");
+                    }
+                },
+                PlayerColor::Green => {
+                    if (game.player_green == 0) {
+                        game.player_green = caller_username
+                    } else {
+                        panic!("GREEN already selected");
+                    }
+                },
+                PlayerColor::Yellow => {
+                    if (game.player_yellow == 0) {
+                        game.player_yellow = caller_username
+                    } else {
+                        panic!("YELLOW already selected");
+                    }
+                },
+            }
+
+            // Start game automatically once the last player joins
+
+            const TWO_PLAYERS: u8 = 2;
+            const THREE_PLAYERS: u8 = 3;
+            const FOUR_PLAYERS: u8 = 4;
+
+            // Create bot players (if they have not been created)
             let green_bot: Player = self.create_bot_player(PlayerColor::Green);
             let yellow_bot: Player = self.create_bot_player(PlayerColor::Yellow);
             let blue_bot: Player = self.create_bot_player(PlayerColor::Blue);
             let red_bot: Player = self.create_bot_player(PlayerColor::Red);
 
-            match game_mode {
-                GameMode::SinglePlayer => {
-                    // Check for color the player selected
-                    if game.player_green != 0 {
-                        if game.number_of_players == 4 {
-                            game.player_yellow == yellow_bot.username;
-                            game.player_blue == blue_bot.username;
-                            game.player_red == red_bot.username;
-                        } else if game.number_of_players == 3 {
-                            game.player_yellow == yellow_bot.username;
-                            game.player_blue == blue_bot.username;
-                        } else if game.number_of_players == 2 {
-                            game.player_yellow == yellow_bot.username;
-                        }
-                    } else if game.player_yellow != 0 {
-                        if game.number_of_players == 4 {
-                            game.player_blue == blue_bot.username;
-                            game.player_red == red_bot.username;
-                            game.player_green == green_bot.username;
-                        } else if game.number_of_players == 3 {
-                            game.player_blue == blue_bot.username;
-                            game.player_green == green_bot.username;
-                        } else if game.number_of_players == 2 {
-                            game.player_green == green_bot.username;
-                        }
-                    } else if game.player_red != 0 {
-                        if game.number_of_players == 4 {
-                            game.player_yellow == yellow_bot.username;
-                            game.player_blue == blue_bot.username;
-                            game.player_green == green_bot.username;
-                        } else if game.number_of_players == 3 {
-                            game.player_green == green_bot.username;
-                            game.player_blue == blue_bot.username;
-                        } else if game.number_of_players == 2 {
-                            game.player_blue == blue_bot.username;
-                        }
-                    } else if game.player_blue != 0 {
-                        if game.number_of_players == 4 {
-                            game.player_yellow == yellow_bot.username;
-                            game.player_green == green_bot.username;
-                            game.player_red == red_bot.username;
-                        } else if game.number_of_players == 3 {
-                            game.player_yellow == yellow_bot.username;
-                            game.player_blue == blue_bot.username;
-                        } else if game.number_of_players == 2 {
-                            game.player_blue == blue_bot.username;
-                        }
+                    if (game.player_red != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_blue != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_green != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_yellow != 0) {
+                        players_joined_count += 1;
+                    }
+
+                    // Start game once all players have joined
+                    if (players_joined_count == TWO_PLAYERS) {
+                        game.status = GameStatus::Ongoing;
                     }
                 },
-                GameMode::MultiPlayer => {},
+                GameMode::MultiPlayer => {}
             };
         }
 
-        fn join(ref self: ContractState, username: felt252, selected_color: felt252, game_id: u64) {
-            // Get world state
-            let mut world = self.world_default();
+                    // Start game once all players have joined
+                    if (players_joined_count == THREE_PLAYERS) {
+                        game.status = GameStatus::Ongoing;
+                    }
+                },
+                4 => {
+                    let mut players_joined_count: u8 = 0;
 
             //get the game state
             let mut game: Game = world.read_model(game_id);
+            //
 
             game.player_red = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0,
+                _ => 0
             };
             game.player_yellow = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0,
+                _ => 0
             };
             game.player_blue = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0,
+                _ => 0
             };
             game.player_green = match selected_color {
                 0 => 0,
                 1 => username,
-                _ => 0,
+                _ => 0
             };
         }
 
@@ -604,7 +630,7 @@ pub mod GameActions {
                 PlayerColor::Red => {
                     username = 'red_bot';
                     player_address = contract_address_const::<'red_bot'>();
-                },
+                }
             };
 
             let existing_player: Player = world.read_model(username);
@@ -615,10 +641,10 @@ pub mod GameActions {
 
                 let new_player: Player = PlayerTrait::new(username, player_address, is_bot);
                 let username_to_address: UsernameToAddress = UsernameToAddress {
-                    username, address: player_address,
+                    username, address: player_address
                 };
                 let address_to_username: AddressToUsername = AddressToUsername {
-                    address: player_address, username,
+                    address: player_address, username
                 };
 
                 world.write_model(@new_player);
