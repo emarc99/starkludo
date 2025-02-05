@@ -190,65 +190,6 @@ mod tests {
     }
 
     #[test]
-    fn test_create_bot_player_is_successful() {
-        let (_, game_action_system) = setup_world();
-
-        let blue_color = PlayerColor::Blue;
-        let green_color = PlayerColor::Green;
-        let red_color = PlayerColor::Red;
-        let yellow_color = PlayerColor::Yellow;
-
-        let created_blue_bot_player: Player = game_action_system.create_bot_player(blue_color);
-        let expected_blue_username = 'blue_bot';
-        let expected_blue_address = starknet::contract_address_const::<'blue_bot'>();
-        assert_eq!(created_blue_bot_player.username, expected_blue_username);
-        assert_eq!(created_blue_bot_player.owner, expected_blue_address);
-        assert_eq!(created_blue_bot_player.is_bot, true);
-
-        let created_green_bot_player: Player = game_action_system.create_bot_player(green_color);
-        let expected_green_username = 'green_bot';
-        let expected_green_address = starknet::contract_address_const::<'green_bot'>();
-        assert_eq!(created_green_bot_player.username, expected_green_username);
-        assert_eq!(created_green_bot_player.owner, expected_green_address);
-        assert_eq!(created_green_bot_player.is_bot, true);
-
-        let created_red_bot_player: Player = game_action_system.create_bot_player(red_color);
-        let expected_red_username = 'red_bot';
-        let expected_red_address = starknet::contract_address_const::<'red_bot'>();
-        assert_eq!(created_red_bot_player.username, expected_red_username);
-        assert_eq!(created_red_bot_player.owner, expected_red_address);
-        assert_eq!(created_red_bot_player.is_bot, true);
-
-        let created_yellow_bot_player: Player = game_action_system.create_bot_player(yellow_color);
-        let expected_yellow_username = 'yellow_bot';
-        let expected_yellow_address = starknet::contract_address_const::<'yellow_bot'>();
-        assert_eq!(created_yellow_bot_player.username, expected_yellow_username);
-        assert_eq!(created_yellow_bot_player.owner, expected_yellow_address);
-        assert_eq!(created_yellow_bot_player.is_bot, true);
-    }
-
-    #[test]
-    fn test_create_existing_bot_player() {
-        let (_, game_action_system) = setup_world();
-
-        let blue_color = PlayerColor::Blue;
-        let created_blue_bot_player: Player = game_action_system.create_bot_player(blue_color);
-
-        let expected_blue_username = 'blue_bot';
-        let expected_blue_address = starknet::contract_address_const::<'blue_bot'>();
-        assert_eq!(created_blue_bot_player.username, expected_blue_username);
-        assert_eq!(created_blue_bot_player.owner, expected_blue_address);
-        assert_eq!(created_blue_bot_player.is_bot, true);
-
-        let existing_blue_bot_player: Player = game_action_system.create_bot_player(blue_color);
-
-        assert_eq!(existing_blue_bot_player.username, expected_blue_username);
-        assert_eq!(existing_blue_bot_player.owner, expected_blue_address);
-        assert_eq!(existing_blue_bot_player.is_bot, true);
-        assert_eq!(created_blue_bot_player.owner, existing_blue_bot_player.owner);
-    }
-
-    #[test]
     fn test_get_username_from_address() {
         let ndef = namespace_def();
         let mut world = spawn_test_world([ndef].span());
@@ -484,7 +425,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
 
@@ -520,7 +460,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
 
@@ -554,7 +493,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
@@ -591,7 +529,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Green, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
@@ -633,7 +570,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Green, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.dice_face = 6;
@@ -682,7 +618,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.game_condition = array![13, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -730,7 +665,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
-        game_action_system.start_game(game_id);
 
         let mut game: Game = world.read_model(game_id);
         game.game_condition = array![13, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -777,7 +711,6 @@ mod tests {
         // Setup initial game state
         let game_id = game_action_system
             .create_new_game(GameMode::MultiPlayer, PlayerColor::Red, 2);
-        game_action_system.start_game(game_id);
 
         // Move red piece to position 56 (one step away from winning)
         let mut game: Game = world.read_model(game_id);

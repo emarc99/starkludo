@@ -5,11 +5,10 @@ use starkludo::models::player::{Player};
 // Can either be Ongoing or Ended
 #[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug)]
 pub enum GameStatus {
-    Initialised,
-    Pending,
-    Ongoing,
-    Waiting,
-    Ended,
+    Initialised, // Game has been created
+    Pending, // Waiting for players to join (in multiplayer mode)
+    Ongoing, // Game is ongoing
+    Ended // Game has ended
 }
 
 // Represents the game mode
@@ -17,7 +16,7 @@ pub enum GameStatus {
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum GameMode {
     SinglePlayer, // Play with computer
-    MultiPlayer, // Play online with friends
+    MultiPlayer // Play online with friends
 }
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
@@ -25,7 +24,7 @@ pub enum PlayerColor {
     Green,
     Yellow,
     Blue,
-    Red
+    Red,
 }
 
 // Game model
@@ -70,7 +69,7 @@ pub struct Game {
     pub b0: felt252, // blue piece position on board
     pub b1: felt252, // blue piece position on board
     pub b2: felt252, // blue piece position on board
-    pub b3: felt252, // blue piece position on board
+    pub b3: felt252 // blue piece position on board
 }
 
 pub trait GameTrait {
@@ -83,7 +82,7 @@ pub trait GameTrait {
         player_blue: felt252,
         player_yellow: felt252,
         player_green: felt252,
-        number_of_players: u8
+        number_of_players: u8,
     ) -> Game;
     fn restart(ref self: Game);
     fn terminate_game(ref self: Game);
@@ -98,7 +97,7 @@ impl GameImpl of GameTrait {
         player_blue: felt252,
         player_yellow: felt252,
         player_green: felt252,
-        number_of_players: u8
+        number_of_players: u8,
     ) -> Game {
         let zero_address = contract_address_const::<0x0>();
         Game {
@@ -122,14 +121,31 @@ impl GameImpl of GameTrait {
             dice_face: 0,
             player_chance: zero_address.into(),
             has_thrown_dice: false,
-            game_condition: array![0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32, 0_u32],
+            game_condition: array![
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+                0_u32,
+            ],
             r0: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
                 1 => panic!("number of players cannot be 1"),
                 2 => 'R01',
                 3 => 'R01',
                 4 => 'R01',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             r1: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -137,7 +153,7 @@ impl GameImpl of GameTrait {
                 2 => 'R02',
                 3 => 'R02',
                 4 => 'R02',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             r2: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -145,7 +161,7 @@ impl GameImpl of GameTrait {
                 2 => 'R03',
                 3 => 'R03',
                 4 => 'R03',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             r3: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -153,7 +169,7 @@ impl GameImpl of GameTrait {
                 2 => 'R04',
                 3 => 'R04',
                 4 => 'R04',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             g0: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -161,7 +177,7 @@ impl GameImpl of GameTrait {
                 2 => 'G01',
                 3 => 'G01',
                 4 => 'G01',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             g1: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -169,7 +185,7 @@ impl GameImpl of GameTrait {
                 2 => 'G02',
                 3 => 'G02',
                 4 => 'G02',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             g2: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -177,7 +193,7 @@ impl GameImpl of GameTrait {
                 2 => 'G03',
                 3 => 'G03',
                 4 => 'G03',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             g3: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -185,7 +201,7 @@ impl GameImpl of GameTrait {
                 2 => 'GO4',
                 3 => 'GO4',
                 4 => 'GO4',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             y0: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -193,7 +209,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 'Y01',
                 4 => 'Y01',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             y1: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -201,7 +217,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 'Y02',
                 4 => 'Y02',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             y2: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -209,7 +225,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 'Y03',
                 4 => 'Y03',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             y3: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -217,7 +233,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 'Y04',
                 4 => 'Y04',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             b0: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -225,7 +241,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 0,
                 4 => 'B01',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             b1: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -233,7 +249,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 0,
                 4 => 'B02',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             b2: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -241,7 +257,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 0,
                 4 => 'B03',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
             b3: match number_of_players {
                 0 => panic!("number of players cannot be 0"),
@@ -249,7 +265,7 @@ impl GameImpl of GameTrait {
                 2 => 0,
                 3 => 0,
                 4 => 'B04',
-                _ => panic!("invalid number of players")
+                _ => panic!("invalid number of players"),
             },
         }
     }
