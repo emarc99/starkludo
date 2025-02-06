@@ -9,9 +9,8 @@ trait IGameActions<T> {
     fn create_new_game(
         ref self: T, game_mode: GameMode, player_color: PlayerColor, number_of_players: u8,
     ) -> u64;
-    fn start_game(ref self: T, game_id: u64);
-    fn join(ref self: T, username: felt252, selected_color: felt252, game_id: u64);
-    fn move(ref self: T,  pos: felt252, color: u8);
+    fn join(ref self: T, player_color: PlayerColor, game_id: u64);
+    fn move(ref self: T, pos: felt252, color: u8);
     fn roll(ref self: T) -> (u8, u8);
 
     fn get_current_game_id(self: @T) -> u64;
@@ -140,13 +139,6 @@ pub mod GameActions {
 
             assert(game.is_initialised, 'GAME NOT INITIALISED');
 
-            // Assert that only game creator can start game
-            let caller_address = get_caller_address();
-            let game_creator_username = self.get_username_from_address(caller_address);
-            assert(game.created_by == game_creator_username, 'ONLY GAME CREATOR CAN CALL');
-
-            // Check if all the players have joined the game
-
             // Assert that game is a Multiplayer game
             assert(game.mode == GameMode::MultiPlayer, 'GAME NOT MULTIPLAYER');
 
@@ -200,11 +192,11 @@ pub mod GameActions {
             const THREE_PLAYERS: u8 = 3;
             const FOUR_PLAYERS: u8 = 4;
 
-            // Create bot players (if they have not been created)
-            let green_bot: Player = self.create_bot_player(PlayerColor::Green);
-            let yellow_bot: Player = self.create_bot_player(PlayerColor::Yellow);
-            let blue_bot: Player = self.create_bot_player(PlayerColor::Blue);
-            let red_bot: Player = self.create_bot_player(PlayerColor::Red);
+            match game.number_of_players {
+                0 => panic!("Number of players cannot be 0"),
+                1 => panic!("Number of players cannot be 1"),
+                2 => {
+                    let mut players_joined_count: u8 = 0;
 
                     if (game.player_red != 0) {
                         players_joined_count += 1;
@@ -224,9 +216,21 @@ pub mod GameActions {
                         game.status = GameStatus::Ongoing;
                     }
                 },
-                GameMode::MultiPlayer => {}
-            };
-        }
+                3 => {
+                    let mut players_joined_count: u8 = 0;
+
+                    if (game.player_red != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_blue != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_green != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_yellow != 0) {
+                        players_joined_count += 1;
+                    }
 
                     // Start game once all players have joined
                     if (players_joined_count == THREE_PLAYERS) {
@@ -236,35 +240,37 @@ pub mod GameActions {
                 4 => {
                     let mut players_joined_count: u8 = 0;
 
-            //get the game state
-            let mut game: Game = world.read_model(game_id);
-            //
+                    if (game.player_red != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_blue != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_green != 0) {
+                        players_joined_count += 1;
+                    }
+                    if (game.player_yellow != 0) {
+                        players_joined_count += 1;
+                    }
 
-            game.player_red = match selected_color {
-                0 => 0,
-                1 => username,
-                _ => 0
+                    // Start game once all players have joined
+                    if (players_joined_count == FOUR_PLAYERS) {
+                        game.status = GameStatus::Ongoing;
+                    }
+                },
+                _ => panic!("Invalid number of players"),
             };
-            game.player_yellow = match selected_color {
-                0 => 0,
-                1 => username,
-                _ => 0
-            };
-            game.player_blue = match selected_color {
-                0 => 0,
-                1 => username,
-                _ => 0
-            };
-            game.player_green = match selected_color {
-                0 => 0,
-                1 => username,
-                _ => 0
-            };
+
+            // Update the game state in the world
+            world.write_model(@game);
         }
 
-        fn move(ref self: ContractState, pos: felt252, color: u8, game_id: u64) {
+        fn move(ref self: ContractState, pos: felt252, color: u8) {
             // Get world state
             let mut world = self.world_default();
+
+            // Get the current game ID
+            let game_id = self.get_current_game_id();
 
             // Retrieve the game state
             let mut game: Game = world.read_model(game_id);
@@ -604,60 +610,6 @@ pub mod GameActions {
             world.write_model(@address_to_username);
 
             world.emit_event(@PlayerCreated { username, owner: caller });
-        }
-
-        // TODO: Make function private
-        fn create_bot_player(ref self: ContractState, bot_color: PlayerColor) -> Player {
-            let mut world = self.world_default();
-            let mut username: felt252 = 0;
-            let zero_address: ContractAddress = contract_address_const::<0x0>();
-            let mut player_address: ContractAddress = zero_address;
-
-            // Derive username and player address from bot color
-            match bot_color {
-                PlayerColor::Green => {
-                    username = 'green_bot';
-                    player_address = contract_address_const::<'green_bot'>();
-                },
-                PlayerColor::Yellow => {
-                    username = 'yellow_bot';
-                    player_address = contract_address_const::<'yellow_bot'>();
-                },
-                PlayerColor::Blue => {
-                    username = 'blue_bot';
-                    player_address = contract_address_const::<'blue_bot'>();
-                },
-                PlayerColor::Red => {
-                    username = 'red_bot';
-                    player_address = contract_address_const::<'red_bot'>();
-                }
-            };
-
-            let existing_player: Player = world.read_model(username);
-
-            // If bot player has not been created
-            if existing_player.owner == zero_address {
-                let is_bot: bool = true;
-
-                let new_player: Player = PlayerTrait::new(username, player_address, is_bot);
-                let username_to_address: UsernameToAddress = UsernameToAddress {
-                    username, address: player_address
-                };
-                let address_to_username: AddressToUsername = AddressToUsername {
-                    address: player_address, username
-                };
-
-                world.write_model(@new_player);
-                world.write_model(@username_to_address);
-                world.write_model(@address_to_username);
-
-                world.emit_event(@PlayerCreated { username, owner: player_address });
-
-                new_player
-            } else {
-                // If bot player has been created
-                existing_player
-            }
         }
 
         fn get_username_from_address(self: @ContractState, address: ContractAddress) -> felt252 {
